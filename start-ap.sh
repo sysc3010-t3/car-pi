@@ -1,4 +1,5 @@
-sed -e "/^.*#.*interface\swlan0/,/^.*#.*nohook\swpa_supplicant/ s/^#\(.*\)$/\1/g" /etc/dhcpcd.conf | sudo tee /etc/dhcpcd.conf
+iw dev wlan0 interface add uap0 type __ap
+sudo ifconfig uap0 up
 sudo service dhcpcd restart
 
 sleep 1
