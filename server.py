@@ -34,7 +34,7 @@ class Server(object):
             try:
                 body = json.loads(data)
             except json.JSONDecodeError:
-                print('Received invalid JSON') # TODO: Logging
+                print('Received invalid JSON')
                 self.send({'type': 'error', 'status': 'bad request', 'msg':'invalid JSON'}, addr)
                 continue
             if body['type'] in self.handlers:
