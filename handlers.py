@@ -59,6 +59,7 @@ def handle_connect_wifi(server, body, addr):
             argList = ['./connect-wifi.sh', ssid]
         else:
             argList = ['./connect-wifi.sh', ssid, body['password']]
+
         process = subprocess.run(argList, check=True, capture_output=True,
                 text=True)
     except subprocess.CalledProcessError as err:
