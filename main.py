@@ -1,12 +1,8 @@
 import argparse
 import handlers
 
-from enum import IntEnum
 from server import Server
-
-class MsgType(IntEnum):
-    GET_SSID = 0
-    CONNECT_WIFI = 1
+from utils import MsgType
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='RC Camera Car Server.')
@@ -18,5 +14,5 @@ if __name__ == '__main__':
 
     server = Server(HOST, PORT)
     server.add_handler(MsgType.GET_SSID, handlers.handle_get_ssid)
-    server.add_handler(MsgType.CONNECT_WIFI, handlers.handle_connect_wifi)
+    server.add_handler(MsgType.WIFI_CONN, handlers.handle_connect_wifi)
     server.receive_forever()

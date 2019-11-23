@@ -1,6 +1,8 @@
 import json
 import socket
 
+from utils import MsgType, Error
+
 class Server(object):
     """
     A class that encapsulates the UDP server that will run on the
@@ -35,18 +37,16 @@ class Server(object):
                 body = json.loads(data)
             except json.JSONDecodeError:
                 print('Received invalid JSON')
-                self.send({'type': 'error', 'status': 'bad request', 'msg':'invalid JSON'}, addr)
+                self.send(Error.json(Error.BAD_REQ, 'invalid JSON'), addr)
                 continue
             if body['type'] in self.handlers:
                 try:
                     self.handlers[body['type']](self, body, addr)
                 except Exception as e:
-                    resp = {'type': 'error', 'status': 'server error', 'msg':str(e)}
-                    self.send(json.dumps(resp).encode('utf-8'), addr)
+                    self.send(Error.json(Error.SERVER_ERR, str(e)), addr)
             else:
                 print('Invalid message type', body)
-                resp = {'type': 'error', 'status': 'bad request', 'msg':'invalid mssage type'}
-                self.send(json.dumps(resp).encode('utf-8'), addr)
+                self.send(Error.json(Error.BAD_REQ, 'invalid message type'), addr)
 
     def send(self, data, address):
         """
