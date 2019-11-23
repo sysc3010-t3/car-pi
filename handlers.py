@@ -51,7 +51,7 @@ def handle_connect_wifi(server, body, addr):
     addr -- source destination of received UDP packet
     """
     if 'ssid' not in body:
-        server.send(Error.json(Error.BAQ_REQ, 'missing ssid'), addr)
+        server.send(Error.json(Error.BAD_REQ, 'missing ssid'), addr)
         return
 
     ssid = body['ssid']
