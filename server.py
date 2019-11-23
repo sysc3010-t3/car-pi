@@ -46,7 +46,7 @@ class Server(object):
                     self.send(Error.json(Error.SERVER_ERR, str(e)), addr)
             else:
                 print('Invalid message type', body)
-                self.send(Error.json(Error.BAQ_REQ, 'invalid message type'), addr)
+                self.send(Error.json(Error.BAD_REQ, 'invalid message type'), addr)
 
     def send(self, data, address):
         """
