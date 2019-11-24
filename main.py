@@ -10,7 +10,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     PORT = args.port
-    HOST = ''
+    HOST = '192.168.4.1'
 
     server = Server(HOST, PORT)
     server.add_handler(MsgType.GET_SSID, handlers.handle_get_ssid)
