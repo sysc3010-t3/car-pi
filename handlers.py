@@ -71,3 +71,8 @@ def handle_connect_wifi(server, body, addr):
     except Exception as err:
         print("error running connect-wifi.sh: {0}".format(str(err)))
         raise Exception("Failed to connect to {0} network".format(ssid))
+
+    # Respond to client with an ACK to confirm the connection was successful
+    server.send(json.dumps({'type': MsgType.ACK}).encode('utf-8'), addr)
+
+    subprocess.run('./shell-scripts/stop-ap.sh')

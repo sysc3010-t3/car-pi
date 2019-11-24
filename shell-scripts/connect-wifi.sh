@@ -17,11 +17,10 @@ if [[ $(grep $SSID /etc/wpa_supplicant/wpa_supplicant.conf) ]]; then
     sed "/$SSID/!b;n;c\	$PSK" /etc/wpa_supplicant/wpa_supplicant.conf | sudo tee /etc/wpa_supplicant/wpa_supplicant.conf
 else
     # Create new configuration entry
-    printf "\nnetwork={\n\tssid=\"$SSID\"\n\t$PSK\n}" | sudo tee -a /etc/wpa_supplicant/wpa_supplicant.conf
+    printf "\n\nnetwork={\n\tssid=\"$SSID\"\n\t$PSK\n}" | sudo tee -a /etc/wpa_supplicant/wpa_supplicant.conf
 fi
 
 sudo service dhcpcd restart
-
 sleep 5
 
 # Reconfigure interface
@@ -39,19 +38,9 @@ do
     fi
 done
 
-# If connection is unsuccessful, then reconfigure access point
 if [ $CONNECTED -eq 0 ]; then
     >&2 echo "failed to connect to $SSID"
     exit 1
 fi
-
-# Take down access point interface
-sudo ifconfig uap0 down
-iw dev uap0 del
-sudo service dhcpcd restart
-
-# Turn off AP software
-sudo systemctl stop hostapd
-sudo systemctl stop dnsmasq
 
 exit 0
