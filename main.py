@@ -2,7 +2,7 @@ import argparse
 import handlers
 
 from server import Server
-from utils import MsgType
+from utils import MsgType, Metadata
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='RC Camera Car Server.')
@@ -10,9 +10,22 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     PORT = args.port
-    HOST = '192.168.4.1'
+    AP_HOST = '192.168.4.1'
+    WLAN_HOST = '192.168.0.154'
 
-    server = Server(HOST, PORT)
+    metadata = Metadata()
+
+    # Access point functionality that only handles returning nearby SSIDs and
+    # connecting to WiFi
+    server = Server(AP_HOST, PORT, metadata)
     server.add_handler(MsgType.GET_SSID, handlers.handle_get_ssid)
     server.add_handler(MsgType.WIFI_CONN, handlers.handle_connect_wifi)
+    server.receive_forever()
+
+    # Server functionality that occurs after the car connects to WiFi
+    server = Server(WLAN_HOST, PORT, metadata)
+
+    carID = handlers.handle_register_car(server)
+    metadata.set_car_id(carID)
+
     server.receive_forever()

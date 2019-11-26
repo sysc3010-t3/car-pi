@@ -1,7 +1,7 @@
 import json
 import socket
 
-from utils import MsgType, Error
+from utils import MsgType, Error, CloseServer
 
 class Server(object):
     """
@@ -14,7 +14,7 @@ class Server(object):
 
     BUFFER_SIZE = 0xFF
 
-    def __init__(self, host, port):
+    def __init__(self, host, port, metadata):
         """
         Create a new UDP server that will listen forever on a single socket
         bound to the given host and port.
@@ -23,6 +23,24 @@ class Server(object):
         self.handlers = {}
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind((host, port))
+        self.metadata = metadata
+
+    def receive(self):
+        """
+        Receive a new message and return the data and source address. If the
+        message is JSON-formatted, then it will return the parsed body and the
+        source address. If not, it will send an error to the sender.
+        """
+
+        data, addr = self.socket.recvfrom(self.BUFFER_SIZE)
+        try:
+            body = json.loads(data)
+        except json.JSONDecodeError:
+            print('Received invalid JSON')
+            self.send(Error.json(Error.BAD_REQ, 'invalid JSON'), addr)
+            return None, None
+
+        return body, addr
 
     def receive_forever(self):
         """
@@ -32,21 +50,24 @@ class Server(object):
         """
 
         while True:
-            data, addr = self.socket.recvfrom(self.BUFFER_SIZE)
-            try:
-                body = json.loads(data)
-            except json.JSONDecodeError:
-                print('Received invalid JSON')
-                self.send(Error.json(Error.BAD_REQ, 'invalid JSON'), addr)
+            body, addr = self.receive()
+            if body == None and addr == None:
+                # There was an error with the received message
                 continue
-            if body['type'] in self.handlers:
-                try:
-                    self.handlers[body['type']](self, body, addr)
-                except Exception as e:
-                    self.send(Error.json(Error.SERVER_ERR, str(e)), addr)
-            else:
+
+            if body['type'] not in self.handlers:
+                # Provided type is not a registered handler
                 print('Invalid message type', body)
                 self.send(Error.json(Error.BAD_REQ, 'invalid message type'), addr)
+                continue
+
+            try:
+                self.handlers[body['type']](self, body, addr)
+            except CloseServer:
+                self.close()
+                return
+            except Exception as e:
+                self.send(Error.json(Error.SERVER_ERR, str(e)), addr)
 
     def send(self, data, address):
         """
@@ -63,3 +84,6 @@ class Server(object):
         """
 
         self.handlers[message_type] = handler
+
+    def close(self):
+        self.socket.close()
