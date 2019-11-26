@@ -1,7 +1,12 @@
 import json
 import subprocess
+from server import Server
 
 from utils import MsgType, Error
+
+SERVER_IP = '192.168.4.19'
+WLAN_IP = '192.168.0.154'
+PORT = 8080
 
 def handle_get_ssid(server, body, addr):
     """
@@ -40,6 +45,32 @@ def handle_get_ssid(server, body, addr):
     server.send(json.dumps(resp).encode('utf-8'), addr)
 
 
+def register_car(userID):
+    """
+    Registers the car with the central server. Retries forever until the wanted
+    ACK is received. Returns the carID received in the ACK.
+
+    Arguments:
+    userID -- The ID of the user that is registering the car
+    """
+    server = Server(WLAN_IP, PORT, 60)
+    attempts = 0
+    while True:
+        req = {"type": MsgType.REG_CAR, "user_id": userID}
+        server.send(json.dumps(req).encode('utf-8'), SERVER_IP)
+        # Wait for a max of 1 minute until the ACK from the server is received
+        start = time.time()
+        valid = False
+        while time.time() - start < 60:
+            body, addr = receive()
+            if addr == SERVER_IP and body['type'] == MsgType.ACK and \
+                'car_id' in body:
+                valid = True
+                break
+        if valid:
+            return body['car_id']
+
+
 def handle_connect_wifi(server, body, addr):
     """
     Connects to the specified network in the body.
@@ -50,8 +81,8 @@ def handle_connect_wifi(server, body, addr):
     body -- JSON body of UDP packet received
     addr -- source destination of received UDP packet
     """
-    if 'ssid' not in body:
-        server.send(Error.json(Error.BAD_REQ, 'missing ssid'), addr)
+    if 'ssid' not in body or 'user_id' not in body:
+        server.send(Error.json(Error.BAD_REQ, 'body must include "ssid" and "user_id" fields'), addr)
         return
 
     ssid = body['ssid']
@@ -76,3 +107,5 @@ def handle_connect_wifi(server, body, addr):
     server.send(json.dumps({'type': MsgType.ACK}).encode('utf-8'), addr)
 
     subprocess.run('./shell-scripts/stop-ap.sh')
+
+    carID = register_car(body['user_id'])

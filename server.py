@@ -24,6 +24,28 @@ class Server(object):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind((host, port))
 
+    def receive(self):
+        """
+        Receive a new message and return the data and source address. If the
+        message is JSON-formatted and has a "type" key, then it will return the
+        parsed body and the source address. If not, it will send an error to the
+        sender.
+        """
+
+        data, addr = self.socket.recvfrom(self.BUFFER_SIZE)
+        try:
+            body = json.loads(data)
+        except json.JSONDecodeError:
+            print('Received invalid JSON')
+            self.send(Error.json(Error.BAD_REQ, 'invalid JSON'), addr)
+            return None, None
+        if body['type'] not in self.handlers:
+            print('Invalid message type', body)
+            self.send(Error.json(Error.BAD_REQ, 'invalid message type'), addr)
+            return None, None
+
+        return body, addr
+
     def receive_forever(self):
         """
         Start an infinite loop that will indefinitely block on a receive until
@@ -32,21 +54,15 @@ class Server(object):
         """
 
         while True:
-            data, addr = self.socket.recvfrom(self.BUFFER_SIZE)
-            try:
-                body = json.loads(data)
-            except json.JSONDecodeError:
-                print('Received invalid JSON')
-                self.send(Error.json(Error.BAD_REQ, 'invalid JSON'), addr)
+            body, addr = receive()
+            if body == None and addr == None:
+                # There was an error with the received message
                 continue
-            if body['type'] in self.handlers:
-                try:
-                    self.handlers[body['type']](self, body, addr)
-                except Exception as e:
-                    self.send(Error.json(Error.SERVER_ERR, str(e)), addr)
-            else:
-                print('Invalid message type', body)
-                self.send(Error.json(Error.BAD_REQ, 'invalid message type'), addr)
+
+            try:
+                self.handlers[body['type']](self, body, addr)
+            except Exception as e:
+                self.send(Error.json(Error.SERVER_ERR, str(e)), addr)
 
     def send(self, data, address):
         """
