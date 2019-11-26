@@ -25,6 +25,7 @@ if __name__ == '__main__':
     # Server functionality that occurs after the car connects to WiFi
     server = Server(WLAN_HOST, PORT, metadata)
     server.add_handler(MsgType.MOVE, handlers.handle_move)
+    server.add_handler(MsgType.SET_LED, handlers.handle_set_led)
 
     carID = handlers.handle_register_car(server)
     metadata.set_car_id(carID)

@@ -11,6 +11,7 @@ class MsgType(IntEnum):
     MOVE = 8
     GET_SSID = 9
     WIFI_CONN = 10
+    SET_LED = 11
 
 class Error(IntEnum):
     BAD_REQ = 0

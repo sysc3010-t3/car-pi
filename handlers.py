@@ -157,3 +157,27 @@ def handle_move(server, body, addr):
         return
 
     SerialMsg.write_16_bit(server.serial, SerialMsg.MOVE, body['x'], body['y'])
+
+
+def handle_set_led(server, body, addr):
+    """
+    Passes the new LED state to the Arduino via the serial port.
+
+    Arguments:
+    server -- instance of Server class
+    body -- JSON body of UDP packet received
+    addr -- source destination of received UDP packet
+    """
+    if 'state' not in body:
+        server.send(Error.json(Error.BAD_REQ, 'missing "state" field'), addr)
+        return
+
+    state = body['state']
+    if state < 0 or state > 2 or not isinstance(state, int):
+        server.send(Error.json(Error.BAD_REQ, \
+                '"state" must integer in range [0, 2]'), addr)
+        return
+
+    SerialMsg.write_8_bit(server.serial, SerialMsg.LED, state)
+
+    server.send(json.dumps({'type': MsgType.ACK}).encode('utf-8'), addr)
