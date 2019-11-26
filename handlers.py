@@ -1,10 +1,12 @@
 import json
 import subprocess
+import time
+import socket
 from server import Server
 
 from utils import MsgType, Error
 
-SERVER_IP = '192.168.4.19'
+SERVER_ADDR = ('127.0.0.1', 6006) # Replace with actual server address
 WLAN_IP = '192.168.0.154'
 PORT = 8080
 
@@ -54,16 +56,21 @@ def register_car(userID):
     userID -- The ID of the user that is registering the car
     """
     server = Server(WLAN_IP, PORT, 60)
+    server.add_handler(MsgType.ACK, None)
     attempts = 0
     while True:
         req = {"type": MsgType.REG_CAR, "user_id": userID}
-        server.send(json.dumps(req).encode('utf-8'), SERVER_IP)
+        server.send(json.dumps(req).encode('utf-8'), SERVER_ADDR)
         # Wait for a max of 1 minute until the ACK from the server is received
         start = time.time()
         valid = False
         while time.time() - start < 60:
-            body, addr = receive()
-            if addr == SERVER_IP and body['type'] == MsgType.ACK and \
+            try:
+                body, addr = server.receive()
+            except socket.timeout:
+                break
+
+            if addr == SERVER_ADDR and body['type'] == MsgType.ACK and \
                 'car_id' in body:
                 valid = True
                 break

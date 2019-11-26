@@ -14,7 +14,7 @@ class Server(object):
 
     BUFFER_SIZE = 0xFF
 
-    def __init__(self, host, port):
+    def __init__(self, host, port, timeout=None):
         """
         Create a new UDP server that will listen forever on a single socket
         bound to the given host and port.
@@ -23,6 +23,7 @@ class Server(object):
         self.handlers = {}
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind((host, port))
+        self.socket.settimeout(timeout)
 
     def receive(self):
         """
@@ -54,7 +55,7 @@ class Server(object):
         """
 
         while True:
-            body, addr = receive()
+            body, addr = self.receive()
             if body == None and addr == None:
                 # There was an error with the received message
                 continue
