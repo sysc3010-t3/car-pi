@@ -111,8 +111,20 @@ def handle_connect_wifi(server, body, addr):
         print("error running connect-wifi.sh: {0}".format(str(err)))
         raise Exception("Failed to connect to {0} network".format(ssid))
 
-    # Respond to client with an ACK to confirm the connection was successful
-    server.send(json.dumps({'type': MsgType.ACK}).encode('utf-8'), addr)
+    # Respond to client with an ACK to confirm the connection was successful.
+    # Retry if client sends the WIFI_CONN message within 10 seconds to indicate
+    # that the ACK message was dropped.
+    server.socket.settimeout(10)
+    while True:
+        server.send(json.dumps({'type': MsgType.ACK}).encode('utf-8'), addr)
+        try:
+            body, addr = server.receive()
+        except socket.timeout:
+            # WIFI_CONN message was not retried therefore the ACK was received
+            # successfully
+            break
+
+    server.socket.settimeout(None)
 
     subprocess.run('./shell-scripts/stop-ap.sh')
 
