@@ -91,8 +91,8 @@ class SerialMsg(IntEnum):
         except OverflowError:
             raise Exception('unable to convert values to 16-bit words')
 
-        serial.write([bytes([msgType]), val1High, val1Low, val2High, val2Low, \
-                '\n'.encode('utf-8')])
+        data = bytes([msgType, val1High, val1Low, val2High, val2Low]) + b'\n'
+        serial.write(data)
 
     @staticmethod
     def write8Bit(serial, msgType, val):
@@ -104,4 +104,4 @@ class SerialMsg(IntEnum):
         msgType -- integer that represents the type of the message being sent
         val -- integer that will be sent
         """
-        serial.write(bytes([msgType, val, '\n']))
+        serial.write(bytes([msgType, val]) + b'\n')

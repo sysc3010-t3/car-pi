@@ -26,7 +26,7 @@ class Server(object):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind((host, port))
         self.metadata = metadata
-        self.serial = serial.Serial(PORT)
+        self.serial = serial.Serial(self.PORT)
 
     def receive(self):
         """
