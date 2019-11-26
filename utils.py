@@ -73,7 +73,7 @@ class SerialMsg(IntEnum):
     MODE = 2
 
     @staticmethod
-    def write16Bit(serial, msgType, val1, val2):
+    def write_16_bit(serial, msgType, val1, val2):
         """
         Writes a message to the serial port with 16-bit values instead of 8-bit.
         Raises an exception if error occurred while converting the values to
@@ -95,7 +95,7 @@ class SerialMsg(IntEnum):
         serial.write(data)
 
     @staticmethod
-    def write8Bit(serial, msgType, val):
+    def write_8_bit(serial, msgType, val):
         """
         Writes a message to the serial port with an 8-bit value.
 
