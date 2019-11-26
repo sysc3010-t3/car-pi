@@ -1,5 +1,6 @@
 import json
 import socket
+import serial
 
 from utils import MsgType, Error, CloseServer
 
@@ -13,6 +14,7 @@ class Server(object):
     """
 
     BUFFER_SIZE = 0xFF
+    PORT = '/dev/ttyACM0'
 
     def __init__(self, host, port, metadata):
         """
@@ -24,6 +26,7 @@ class Server(object):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind((host, port))
         self.metadata = metadata
+        self.serial = serial.Serial(PORT)
 
     def receive(self):
         """

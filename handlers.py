@@ -4,7 +4,7 @@ import time
 import socket
 from server import Server
 
-from utils import MsgType, Error, Metadata, CloseServer
+from utils import MsgType, Error, Metadata, CloseServer, SerialMsg
 
 TIMEOUT = 5
 SERVER_ADDR = ('127.0.0.1', 6006) # Replace with actual server address
@@ -132,3 +132,26 @@ def handle_connect_wifi(server, body, addr):
     server.metadata.set_user_id(body['user_id'])
 
     raise CloseServer
+
+def handle_move(server, body, addr):
+    """
+    Passes the joystick coordinates to the Arduino via the serial port.
+
+    Arguments:
+    server -- instance of Server class
+    body -- JSON body of UDP packet received
+    addr -- source destination of received UDP packet
+    """
+    if 'x' not in body or 'y' not in body:
+        server.send(Error.json(Error.BAD_REQ, 'body must include "x" and "y" fields'), addr)
+        return
+
+    if body['x'] < 0 or body['x'] > 1023 or body['y'] < 0 or body['y'] > 1023:
+        server.send(Error.json(Error.BAD_REQ, \
+                '"x" and "y" values must be within the range [0, 1023]'), addr)
+        return
+
+    try:
+        SerialMsg.write16Bit(server.serial, SerialMsg.MOVE, body['x'], body['y'])
+    except Exception as e:
+        server.send(Error.json(Error.SERVER_ERR, str(e), addr))
