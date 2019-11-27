@@ -66,3 +66,42 @@ class CloseServer(Exception):
     Exception that is raised to indicate that the server should be closed.
     """
     pass
+
+class SerialMsg(IntEnum):
+    MOVE = 0
+    LED = 1
+    MODE = 2
+
+    @staticmethod
+    def write16Bit(serial, msgType, val1, val2):
+        """
+        Writes a message to the serial port with 16-bit values instead of 8-bit.
+        Raises an exception if error occurred while converting the values to
+        bytes.
+
+        Arguments:
+        serial -- instance of Serial class
+        msgType -- integer that represents the type of the message being sent
+        val1 -- integer that will be converted to 2 bytes and sent
+        val2 -- integer that will be converted to 2 bytes and sent
+        """
+        try:
+            val1High, val1Low = val1.to_bytes(2, byteorder='big')
+            val2High, val2Low = val2.to_bytes(2, byteorder='big')
+        except OverflowError:
+            raise Exception('unable to convert values to 16-bit words')
+
+        data = bytes([msgType, val1High, val1Low, val2High, val2Low]) + b'\n'
+        serial.write(data)
+
+    @staticmethod
+    def write8Bit(serial, msgType, val):
+        """
+        Writes a message to the serial port with an 8-bit value.
+
+        Arguments:
+        serial -- instance of Serial class
+        msgType -- integer that represents the type of the message being sent
+        val -- integer that will be sent
+        """
+        serial.write(bytes([msgType, val]) + b'\n')
