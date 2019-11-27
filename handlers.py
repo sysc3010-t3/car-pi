@@ -133,6 +133,7 @@ def handle_connect_wifi(server, body, addr):
 
     raise CloseServer
 
+
 def handle_move(server, body, addr):
     """
     Passes the joystick coordinates to the Arduino via the serial port.
@@ -146,12 +147,37 @@ def handle_move(server, body, addr):
         server.send(Error.json(Error.BAD_REQ, 'body must include "x" and "y" fields'), addr)
         return
 
-    if body['x'] < 0 or body['x'] > 1023 or body['y'] < 0 or body['y'] > 1023:
+    x = body['x']
+    y = body['y']
+
+    if x < 0 or x > 1023 or y < 0 or y > 1023 or not isinstance(x, int) or \
+            not isinstance(y, int):
         server.send(Error.json(Error.BAD_REQ, \
                 '"x" and "y" values must be within the range [0, 1023]'), addr)
         return
 
-    try:
-        SerialMsg.write16Bit(server.serial, SerialMsg.MOVE, body['x'], body['y'])
-    except Exception as e:
-        server.send(Error.json(Error.SERVER_ERR, str(e), addr))
+    SerialMsg.write_16_bit(server.serial, SerialMsg.MOVE, body['x'], body['y'])
+
+
+def handle_set_led(server, body, addr):
+    """
+    Passes the new LED state to the Arduino via the serial port.
+
+    Arguments:
+    server -- instance of Server class
+    body -- JSON body of UDP packet received
+    addr -- source destination of received UDP packet
+    """
+    if 'state' not in body:
+        server.send(Error.json(Error.BAD_REQ, 'missing "state" field'), addr)
+        return
+
+    state = body['state']
+    if state < 0 or state > 2 or not isinstance(state, int):
+        server.send(Error.json(Error.BAD_REQ, \
+                '"state" must integer in range [0, 2]'), addr)
+        return
+
+    SerialMsg.write_8_bit(server.serial, SerialMsg.LED, state)
+
+    server.send(json.dumps({'type': MsgType.ACK}).encode('utf-8'), addr)
