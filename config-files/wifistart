@@ -1,0 +1,21 @@
+#!/bin/bash
+
+systemctl stop hostapd.service
+systemctl stop dnsmasq.service
+systemctl stop dhcpcd.service
+
+iw dev uap0 del
+
+iw dev wlan0 interface add uap0 type __ap
+
+iptables-restore < /etc/iptables.ipv4.nat
+
+ifconfig uap0 up
+
+systemctl start hostapd.service
+sleep 10
+
+systemctl start dhcpcd.service
+sleep 5
+
+systemctl start dnsmasq.service
