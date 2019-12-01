@@ -11,7 +11,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     PORT = args.port
     AP_HOST = '192.168.4.1'
-    WLAN_HOST = '192.168.0.154'
+    WLAN_HOST = ''
 
     metadata = Metadata()
 
@@ -29,5 +29,6 @@ if __name__ == '__main__':
 
     carID = handlers.handle_register_car(server)
     metadata.set_car_id(carID)
+    handlers.handle_connect_car(server)
 
     server.receive_forever()

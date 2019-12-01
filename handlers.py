@@ -54,18 +54,19 @@ def handle_register_car(server):
     Arguments:
     server -- instance of Server class
     """
+    req = {
+        "type": MsgType.REG_CAR,
+        "user_id": server.metadata.get_user_id(),
+        "name": server.metadata.get_car_name()
+    }
+
     # Set receive timeout to 5 seconds in case of dropped packets
     server.socket.settimeout(TIMEOUT)
+
     while True:
-        req = {
-            "type": MsgType.REG_CAR,
-            "user_id": server.metadata.get_user_id(),
-            "name": server.metadata.get_car_name()
-        }
         server.send(json.dumps(req).encode('utf-8'), SERVER_ADDR)
         # Wait for a max of 5 seconds or until the ACK from the server is received
         start = time.time()
-        valid = False
         while time.time() - start < TIMEOUT:
             try:
                 body, addr = server.receive()
@@ -75,12 +76,44 @@ def handle_register_car(server):
 
             if addr == SERVER_ADDR and body['type'] == MsgType.ACK and \
                 'car_id' in body:
-                valid = True
+                # Set receive timeout back to None so it waits forever
+                server.socket.settimeout(None)
+                return body['car_id']
+
+
+def handle_connect_car(server):
+    """
+    Connects the car to the central server.
+
+    Arguments:
+    server -- instance of Server class
+    """
+    car_id = server.metadata.get_car_id()
+    req = {
+        "type": MsgType.CONN_CAR,
+        "car_id": car_id
+    }
+
+    # Set receive timeout to 5 seconds in case of dropped packets
+    server.socket.settimeout(TIMEOUT)
+
+    while True:
+        server.send(json.dumps(req).encode('utf-8'), SERVER_ADDR)
+        # Wait for a max of 5 seconds or until the ACK from the server is received
+        start = time.time()
+        while time.time() - start < TIMEOUT:
+            try:
+                body, addr = server.receive()
+            except socket.timeout:
+                # Receive timed out so it has been over 5 seconds
                 break
-        if valid:
-            # Set receive timeout back to None so it waits forever
-            server.socket.settimeout(None)
-            return body['car_id']
+
+            if addr == SERVER_ADDR and body['type'] == MsgType.ACK:
+                # Start camera stream
+                server.start_stream()
+                # Set receive timeout back to None so it waits forever
+                server.socket.settimeout(None)
+                return
 
 
 def handle_connect_wifi(server, body, addr):
