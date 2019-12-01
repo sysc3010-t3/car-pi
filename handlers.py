@@ -57,7 +57,11 @@ def handle_register_car(server):
     # Set receive timeout to 5 seconds in case of dropped packets
     server.socket.settimeout(TIMEOUT)
     while True:
-        req = {"type": MsgType.REG_CAR, "user_id": server.metadata.get_user_id()}
+        req = {
+            "type": MsgType.REG_CAR,
+            "user_id": server.metadata.get_user_id(),
+            "name": server.metadata.get_car_name()
+        }
         server.send(json.dumps(req).encode('utf-8'), SERVER_ADDR)
         # Wait for a max of 5 seconds or until the ACK from the server is received
         start = time.time()
@@ -89,8 +93,8 @@ def handle_connect_wifi(server, body, addr):
     body -- JSON body of UDP packet received
     addr -- source destination of received UDP packet
     """
-    if 'ssid' not in body or 'user_id' not in body:
-        server.send(Error.json(Error.BAD_REQ, 'body must include "ssid" and "user_id" fields'), addr)
+    if 'ssid' not in body or 'user_id' not in body or 'car_name' not in body:
+        server.send(Error.json(Error.BAD_REQ, 'body must include "ssid" and "user_id" and "car_name" fields'), addr)
         return
 
     ssid = body['ssid']
@@ -130,6 +134,7 @@ def handle_connect_wifi(server, body, addr):
 
     # Update metadata with user ID
     server.metadata.set_user_id(body['user_id'])
+    server.metadata.set_car_name(body['car_name'])
 
     raise CloseServer
 

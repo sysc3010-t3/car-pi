@@ -26,8 +26,8 @@ class Error(IntEnum):
 
 class Metadata(object):
     """
-    Represents the metadata of the car. Stores the `user_id` and `car_id` in a
-    file.
+    Represents the metadata of the car. Stores the `user_id`, `car_name`, and
+    `car_id` in a file.
     """
 
     FILENAME = 'metadata.json'
@@ -42,7 +42,7 @@ class Metadata(object):
             with open(self.FILENAME) as f:
                 self.data = json.load(f)
         else:
-            self.data = {'user_id':'','car_id':''}
+            self.data = {'user_id':'','car_name':'','car_id':''}
             with open(self.FILENAME, 'w') as f:
                 json.dump(self.data, f)
 
@@ -51,6 +51,14 @@ class Metadata(object):
 
     def set_user_id(self, userID):
         self.data['user_id'] = userID
+        with open(self.FILENAME, 'w') as f:
+            json.dump(self.data, f)
+
+    def get_car_name(self):
+        return self.data['car_name']
+
+    def set_car_name(self, carName):
+        self.data['car_name'] = carName
         with open(self.FILENAME, 'w') as f:
             json.dump(self.data, f)
 
