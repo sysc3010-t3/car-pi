@@ -17,6 +17,11 @@ PAGE="""\
 </html>
 """
 
+RES = '640x480'
+FRAMERATE = 24
+STREAM_PORT = 8000
+output = None
+
 class StreamingOutput(object):
     def __init__(self):
         self.frame = None
@@ -76,3 +81,22 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
 class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
     allow_reuse_address = True
     daemon_threads = True
+
+def start_stream():
+    """
+    Start camera stream.
+    """
+    global output
+
+    with picamera.PiCamera(resolution=RES, framerate=FRAMERATE) \
+            as camera:
+        camera.vflip = True
+        camera.hflip = True
+        output = StreamingOutput()
+        camera.start_recording(output, format='mjpeg')
+        try:
+            address = ('', STREAM_PORT)
+            server = StreamingServer(address, StreamingHandler)
+            server.serve_forever()
+        finally:
+            camera.stop_recording()

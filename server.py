@@ -3,7 +3,6 @@ import socket
 import serial
 
 from utils import MsgType, Error, CloseServer
-from streaming import StreamingOutput, StreamingHandler, StreamingServer
 
 class Server(object):
     """
@@ -16,9 +15,6 @@ class Server(object):
 
     BUFFER_SIZE = 0xFF
     PORT = '/dev/ttyACM0'
-    RES = '640x480'
-    FRAMERATE = 24
-    STREAM_PORT = 8000
 
     def __init__(self, host, port, metadata):
         """
@@ -40,6 +36,7 @@ class Server(object):
         """
 
         data, addr = self.socket.recvfrom(self.BUFFER_SIZE)
+        print(data, addr)
         try:
             body = json.loads(data)
         except json.JSONDecodeError:
@@ -83,22 +80,6 @@ class Server(object):
         """
 
         self.socket.sendto(data, address)
-
-    def start_stream(self):
-        """
-        Start camera stream.
-        """
-
-        with picamera.PiCamera(resolution=self.RES, framerate=self.FRAMERATE) \
-                as camera:
-            output = StreamingOutput()
-            camera.start_recording(output, format='mjpeg')
-            try:
-                address = ('', self.STREAM_PORT)
-                server = StreamingServer(address, StreamingHandler)
-                server.serve_forever()
-            finally:
-                camera.stop_recording()
 
     def add_handler(self, message_type, handler):
         """

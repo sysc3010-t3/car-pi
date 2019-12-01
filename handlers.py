@@ -2,9 +2,11 @@ import json
 import subprocess
 import time
 import socket
+import threading
 from server import Server
 
 from utils import MsgType, Error, Metadata, CloseServer, SerialMsg
+from streaming import start_stream
 
 TIMEOUT = 5
 SERVER_ADDR = ('127.0.0.1', 6006) # Replace with actual server address
@@ -180,7 +182,8 @@ def handle_connect_car(server):
 
             if addr == SERVER_ADDR and body['type'] == MsgType.ACK:
                 # Start camera stream
-                server.start_stream()
+                stream_thread = threading.Thread(target=start_stream)
+                stream_thread.start()
                 # Set receive timeout back to None so it waits forever
                 server.socket.settimeout(None)
                 return
