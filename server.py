@@ -36,6 +36,7 @@ class Server(object):
         """
 
         data, addr = self.socket.recvfrom(self.BUFFER_SIZE)
+        print(data, addr)
         try:
             body = json.loads(data)
         except json.JSONDecodeError:
