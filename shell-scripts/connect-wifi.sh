@@ -32,7 +32,8 @@ CONNECTED=0
 for i in {1..30}
 do
     sleep 1
-    if [ -n "$(iwgetid | sed "s/^.*ESSID:\"\(.*\)\"/\1/g")" ]; then
+    ./shell-scripts/check_connection.sh
+    if [[ $? -eq 0 ]]; then
         CONNECTED=1
         break
     fi
