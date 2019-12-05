@@ -1,3 +1,4 @@
+import logging
 import json
 import socket
 import serial
@@ -36,11 +37,10 @@ class Server(object):
         """
 
         data, addr = self.socket.recvfrom(self.BUFFER_SIZE)
-        print(data, addr)
         try:
             body = json.loads(data)
         except json.JSONDecodeError:
-            print('Received invalid JSON')
+            logging.debug('Received invalid JSON')
             self.send(Error.json(Error.BAD_REQ, 'invalid JSON'), addr)
             return None, None
 
@@ -61,7 +61,7 @@ class Server(object):
 
             if body['type'] not in self.handlers:
                 # Provided type is not a registered handler
-                print('Invalid message type', body)
+                logging.debug('Invalid message type', body)
                 self.send(Error.json(Error.BAD_REQ, 'invalid message type'), addr)
                 continue
 
