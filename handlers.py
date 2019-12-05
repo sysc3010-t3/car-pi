@@ -74,12 +74,25 @@ def handle_connect_wifi(server, body, addr):
 
     ssid = body['ssid']
 
-    try:
-        if 'password' not in body:
-            argList = ['./shell-scripts/connect-wifi.sh', ssid]
-        else:
-            argList = ['./shell-scripts/connect-wifi.sh', ssid, body['password']]
+    if not isinstance(ssid, str):
+        msg = '"ssid" must be a string'
+        logging.debug(msg)
+        server.send(Error.json(Error.BAD_REQ, msg), addr)
+        return
 
+    if 'password' not in body:
+        argList = ['./shell-scripts/connect-wifi.sh', ssid]
+    else:
+        password = body['password']
+        if not isinstance(password, str):
+            msg = '"password" must be a string'
+            logging.debug(msg)
+            server.send(Error.json(Error.BAD_REQ, msg), addr)
+            return
+
+        argList = ['./shell-scripts/connect-wifi.sh', ssid, password]
+
+    try:
         process = subprocess.run(argList, check=True, capture_output=True,
                 text=True)
     except subprocess.CalledProcessError as err:
@@ -233,8 +246,8 @@ def handle_move(server, body, addr):
     x = body['x']
     y = body['y']
 
-    if x < 0 or x > 1023 or y < 0 or y > 1023 or not isinstance(x, int) or \
-            not isinstance(y, int):
+    if not isinstance(x, int) or not isinstance(y, int) or \
+            x < 0 or x > 1023 or y < 0 or y > 1023:
         msg = '"x" and "y" values must be within the range [0, 1023]'
         logging.debug(msg)
         server.send(Error.json(Error.BAD_REQ, msg), addr)
@@ -260,7 +273,7 @@ def handle_set_led(server, body, addr):
         return
 
     state = body['state']
-    if state < 0 or state > 2 or not isinstance(state, int):
+    if not isinstance(state, int) or state < 0 or state > 2:
         msg = '"state" must integer in range [0, 2]'
         logging.debug(msg)
         server.send(Error.json(Error.BAD_REQ, msg), addr)
