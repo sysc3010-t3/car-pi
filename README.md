@@ -25,7 +25,10 @@ has been developed and tested to run on the Raspbian operating system.
 1. Set up the hardware.  
   a) Connect a Raspberry Pi Camera Module to the Raspberry Pi's Camera Serial
   Interface port.  
-  b) Connect an Arduino to one of the Raspberry Pi's USB ports to allow for a
+  b) Follow the instructions
+  [here](https://www.raspberrypi.org/documentation/configuration/camera.md) to
+  enable camera support.  
+  c) Connect an Arduino to one of the Raspberry Pi's USB ports to allow for a
   serial connection between the two devices.  
 2. Set up the Raspberry Pi as a wireless access point.  
   a) Follow the instructions
