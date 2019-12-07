@@ -6,13 +6,12 @@ for a UDP client/server that uses a single port for communication. This code
 base provides the behaviour for receiving control messages for moving the car
 and controlling the headlights (server behaviour), as well as connecting to the
 system's central server for initial registration and connection (client
-behaviour). This component of the system also communicates with an Arduino over
-a serial connection and creates an HTTP web server for streaming a live video
-feed from a Raspberry Pi Camera Module. This repository also contains
-configuration files and shell scripts for configuring the Raspberry Pi to
-provide a wireless access point, while still acting as wireless client. This
-code and configuration has been developed and tested to run on the Raspbian
-operating system.
+behaviour). This component of the system communicates with an Arduino over a
+serial connection and creates an HTTP web server for streaming a live video feed
+from a Raspberry Pi Camera Module. This repository also contains configuration
+files and shell scripts for configuring the Raspberry Pi to provide a wireless
+access point, while still acting as wireless client. This code and configuration
+has been developed and tested to run on the Raspbian operating system.
 
 ## Setup
 ### Dependencies:
