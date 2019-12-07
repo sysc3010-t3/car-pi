@@ -1,3 +1,4 @@
+import logging
 import json
 import subprocess
 import time
@@ -21,15 +22,21 @@ def handle_get_ssid(server, body, addr):
     body -- JSON body of UDP packet received
     addr -- source destination of received UDP packet
     """
+    logging.debug('GET SSID')
     try:
         # Run shell script to get nearby networks
-        process = subprocess.run('./shell-scripts/get-networks.sh', text=True, capture_output=True, check=True)
+        process = subprocess.run(
+            './shell-scripts/get-networks.sh',
+            text=True,
+            capture_output=True,
+            check=True
+        )
     except subprocess.CalledProcessError as err:
-        print("get-networks.sh exited with code {0:d}: {1}"\
+        logging.debug("get-networks.sh exited with code {0:d}: {1}"\
                 .format(err.returncode, err.output))
         raise Exception("Failed to get available networks")
     except Exception as err:
-        print("error running get-networks.sh: {0}".format(str(err)))
+        logging.debug("error running get-networks.sh: {0}".format(str(err)))
         raise Exception("Failed to get available networks")
 
     networks = {}
@@ -58,27 +65,45 @@ def handle_connect_wifi(server, body, addr):
     body -- JSON body of UDP packet received
     addr -- source destination of received UDP packet
     """
+    logging.debug('WIFI CONN')
     if 'ssid' not in body or 'user_id' not in body or 'car_name' not in body:
-        server.send(Error.json(Error.BAD_REQ, 'body must include "ssid" and "user_id" and "car_name" fields'), addr)
+        msg = 'body must include "ssid" and "user_id" and "car_name" fields'
+        logging.debug(msg)
+        server.send(Error.json(Error.BAD_REQ, msg), addr)
         return
 
     ssid = body['ssid']
 
-    try:
-        if 'password' not in body:
-            argList = ['./shell-scripts/connect-wifi.sh', ssid]
-        else:
-            argList = ['./shell-scripts/connect-wifi.sh', ssid, body['password']]
+    if not isinstance(ssid, str):
+        msg = '"ssid" must be a string'
+        logging.debug(msg)
+        server.send(Error.json(Error.BAD_REQ, msg), addr)
+        return
 
+    if 'password' not in body:
+        argList = ['./shell-scripts/connect-wifi.sh', ssid]
+    else:
+        password = body['password']
+        if not isinstance(password, str):
+            msg = '"password" must be a string'
+            logging.debug(msg)
+            server.send(Error.json(Error.BAD_REQ, msg), addr)
+            return
+
+        argList = ['./shell-scripts/connect-wifi.sh', ssid, password]
+
+    try:
         process = subprocess.run(argList, check=True, capture_output=True,
                 text=True)
     except subprocess.CalledProcessError as err:
-        print("connect-wifi.sh exited with code {1:d}: {2}"\
+        logging.debug("connect-wifi.sh exited with code {1:d}: {2}"\
                 .format(ssid, err.returncode, err.output))
         raise Exception("Failed to connect to {0} network".format(ssid))
     except Exception as err:
-        print("error running connect-wifi.sh: {0}".format(str(err)))
+        logging.debug("error running connect-wifi.sh: {0}".format(str(err)))
         raise Exception("Failed to connect to {0} network".format(ssid))
+
+    logging.debug('wifi connection succeeded, sending ACK to app')
 
     # Respond to client with an ACK to confirm the connection was successful.
     # Retry if client sends the WIFI_CONN message within 10 seconds to indicate
@@ -91,10 +116,14 @@ def handle_connect_wifi(server, body, addr):
         except socket.timeout:
             # WIFI_CONN message was not retried therefore the ACK was received
             # successfully
+            logging.debug('ACK received by app')
             break
+
+        logging.debug('retry ACK send')
 
     server.socket.settimeout(None)
 
+    logging.debug('stopping access point')
     subprocess.run('./shell-scripts/stop-ap.sh')
 
     # Update metadata with user ID
@@ -113,8 +142,10 @@ def handle_check_connection():
         subprocess.run('./shell-scripts/check_connection.sh', check=True)
     except subprocess.CalledProcessError:
         # Not connected to wifi
+        logging.debug('not connected to WiFi network')
         return False
 
+    logging.debug('connected to WiFi network')
     return True
 
 
@@ -126,6 +157,7 @@ def handle_register_car(server):
     Arguments:
     server -- instance of Server class
     """
+    logging.debug('REG CAR')
     req = {
         "type": MsgType.REG_CAR,
         "user_id": server.metadata.get_user_id(),
@@ -144,12 +176,14 @@ def handle_register_car(server):
                 body, addr = server.receive()
             except socket.timeout:
                 # Receive timed out so it has been over 5 seconds
+                logging.debug('receive timed out')
                 break
 
             if addr == SERVER_ADDR and body['type'] == MsgType.ACK and \
                 'car_id' in body:
                 # Set receive timeout back to None so it waits forever
                 server.socket.settimeout(None)
+                logging.debug('successfully registered')
                 return body['car_id']
 
 
@@ -160,6 +194,8 @@ def handle_connect_car(server):
     Arguments:
     server -- instance of Server class
     """
+    logging.debug('CONN CAR')
+
     car_id = server.metadata.get_car_id()
     req = {
         "type": MsgType.CONN_CAR,
@@ -178,6 +214,7 @@ def handle_connect_car(server):
                 body, addr = server.receive()
             except socket.timeout:
                 # Receive timed out so it has been over 5 seconds
+                logging.debug('receive timed out')
                 break
 
             if addr == SERVER_ADDR and body['type'] == MsgType.ACK:
@@ -186,6 +223,7 @@ def handle_connect_car(server):
                 stream_thread.start()
                 # Set receive timeout back to None so it waits forever
                 server.socket.settimeout(None)
+                logging.debug('successfully connected, camera stream started')
                 return
 
 
@@ -198,17 +236,21 @@ def handle_move(server, body, addr):
     body -- JSON body of UDP packet received
     addr -- source destination of received UDP packet
     """
+    logging.debug('MOVE')
     if 'x' not in body or 'y' not in body:
-        server.send(Error.json(Error.BAD_REQ, 'body must include "x" and "y" fields'), addr)
+        msg = 'body must include "x" and "y" fields'
+        logging.debug(msg)
+        server.send(Error.json(Error.BAD_REQ, msg), addr)
         return
 
     x = body['x']
     y = body['y']
 
-    if x < 0 or x > 1023 or y < 0 or y > 1023 or not isinstance(x, int) or \
-            not isinstance(y, int):
-        server.send(Error.json(Error.BAD_REQ, \
-                '"x" and "y" values must be within the range [0, 1023]'), addr)
+    if not isinstance(x, int) or not isinstance(y, int) or \
+            x < 0 or x > 1023 or y < 0 or y > 1023:
+        msg = '"x" and "y" values must be within the range [0, 1023]'
+        logging.debug(msg)
+        server.send(Error.json(Error.BAD_REQ, msg), addr)
         return
 
     SerialMsg.write_16_bit(server.serial, SerialMsg.MOVE, body['x'], body['y'])
@@ -223,14 +265,18 @@ def handle_set_led(server, body, addr):
     body -- JSON body of UDP packet received
     addr -- source destination of received UDP packet
     """
+    logging.debug('SET LED')
     if 'state' not in body:
-        server.send(Error.json(Error.BAD_REQ, 'missing "state" field'), addr)
+        msg = 'missing "state" field'
+        logging.debug(msg)
+        server.send(Error.json(Error.BAD_REQ, msg), addr)
         return
 
     state = body['state']
-    if state < 0 or state > 2 or not isinstance(state, int):
-        server.send(Error.json(Error.BAD_REQ, \
-                '"state" must integer in range [0, 2]'), addr)
+    if not isinstance(state, int) or state < 0 or state > 2:
+        msg = '"state" must integer in range [0, 2]'
+        logging.debug(msg)
+        server.send(Error.json(Error.BAD_REQ, msg), addr)
         return
 
     SerialMsg.write_8_bit(server.serial, SerialMsg.LED, state)
