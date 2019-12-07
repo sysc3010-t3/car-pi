@@ -54,7 +54,7 @@ of the `Server` class
 the live video stream from the camera feed
 * [utils.py](./utils.py): general utility classes and functions
 * [tests/](./tests/): location of test code
-* [config-files/](./tests/): configuration files for setting up the Raspberry Pi
-as a wireless access point and a wireless client
+* [config-files/](./config-files/): configuration files for setting up the
+Raspberry Pi as a wireless access point and a wireless client
 * [shell-scripts/](./shell-scripts/): scripts for configuring the access point
 and managing Wi-Fi networks/connections
