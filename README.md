@@ -33,7 +33,7 @@ has been developed and tested to run on the Raspbian operating system.
 2. Set up the Raspberry Pi as a wireless access point.  
   a) Follow the instructions
   [here](https://www.raspberrypi.org/documentation/configuration/wireless/access-point.md).  
-  b) Copy the files in `config-files` to their corresponding locations, as
+  b) Copy the files in `config-files/` to their corresponding locations, as
   indicated in `config-files/README.md`.  
   c) Reboot the Raspberry Pi.  
 3. Run the car server.  
